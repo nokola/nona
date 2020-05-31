@@ -6,6 +6,7 @@ mod color;
 mod context;
 mod fonts;
 mod math;
+mod errors;
 pub mod renderer;
 
 pub use color::*;
@@ -16,3 +17,4 @@ pub use context::{
 pub use fonts::FontId;
 pub use math::*;
 pub use renderer::Renderer;
+pub use errors::*;

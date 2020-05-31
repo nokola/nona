@@ -23,9 +23,9 @@ pub trait Renderer {
         height: usize,
         flags: ImageFlags,
         data: Option<&[u8]>,
-    ) -> anyhow::Result<ImageId>;
+    ) -> NonaResult<ImageId>;
 
-    fn delete_texture(&mut self, img: ImageId) -> anyhow::Result<()>;
+    fn delete_texture(&mut self, img: ImageId) -> NonaResult<()>;
 
     fn update_texture(
         &mut self,
@@ -35,15 +35,15 @@ pub trait Renderer {
         width: usize,
         height: usize,
         data: &[u8],
-    ) -> anyhow::Result<()>;
+    ) -> NonaResult<()>;
 
-    fn texture_size(&self, img: ImageId) -> anyhow::Result<(usize, usize)>;
+    fn texture_size(&self, img: ImageId) -> NonaResult<(usize, usize)>;
 
-    fn viewport(&mut self, extent: Extent, device_pixel_ratio: f32) -> anyhow::Result<()>;
+    fn viewport(&mut self, extent: Extent, device_pixel_ratio: f32) -> NonaResult<()>;
 
-    fn cancel(&mut self) -> anyhow::Result<()>;
+    fn cancel(&mut self) -> NonaResult<()>;
 
-    fn flush(&mut self) -> anyhow::Result<()>;
+    fn flush(&mut self) -> NonaResult<()>;
 
     fn fill(
         &mut self,
@@ -53,7 +53,7 @@ pub trait Renderer {
         fringe: f32,
         bounds: Bounds,
         paths: &[Path],
-    ) -> anyhow::Result<()>;
+    ) -> NonaResult<()>;
 
     fn stroke(
         &mut self,
@@ -63,7 +63,7 @@ pub trait Renderer {
         fringe: f32,
         stroke_width: f32,
         paths: &[Path],
-    ) -> anyhow::Result<()>;
+    ) -> NonaResult<()>;
 
     fn triangles(
         &mut self,
@@ -71,5 +71,5 @@ pub trait Renderer {
         composite_operation: CompositeOperationState,
         scissor: &Scissor,
         vertexes: &[Vertex],
-    ) -> anyhow::Result<()>;
+    ) -> NonaResult<()>;
 }
