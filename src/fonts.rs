@@ -5,7 +5,7 @@ use bitflags::_core::borrow::Borrow;
 use rusttype::gpu_cache::Cache;
 use rusttype::{Font, Glyph, Point, PositionedGlyph, Scale};
 use slab::Slab;
-use std::collections::HashMap;
+use std::{collections::HashMap, error::Error, fmt::Display};
 
 const TEX_WIDTH: usize = 1024;
 const TEX_HEIGHT: usize = 1024;
@@ -36,6 +36,22 @@ pub struct Fonts {
     pub(crate) img: ImageId,
 }
 
+#[derive(Debug)]
+pub struct FontError {
+    pub message: String,
+}
+
+impl Display for FontError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+impl Error for FontError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        None
+    }
+}
+
 impl Fonts {
     pub fn new<R: Renderer>(renderer: &mut R) -> anyhow::Result<Fonts> {
         Ok(Fonts {
@@ -60,7 +76,9 @@ impl Fonts {
         name: N,
         data: D,
     ) -> anyhow::Result<FontId> {
-        let font = Font::<'static>::from_bytes(data.into())?;
+        let font = Font::try_from_vec(data.into()).ok_or(anyhow::Error::new(FontError {
+            message: String::from("Error creating font"),
+        }))?;
         let fd = FontData {
             font,
             fallback_fonts: Default::default(),
