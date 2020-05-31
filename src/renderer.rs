@@ -41,8 +41,6 @@ pub trait Renderer {
 
     fn viewport(&mut self, extent: Extent, device_pixel_ratio: f32) -> NonaResult<()>;
 
-    fn cancel(&mut self) -> NonaResult<()>;
-
     fn flush(&mut self) -> NonaResult<()>;
 
     fn fill(

@@ -508,11 +508,6 @@ impl<R: Renderer> Context<R> {
         Ok(())
     }
 
-    pub fn cancel_frame(&mut self) -> anyhow::Result<()> {
-        self.renderer.cancel()?;
-        Ok(())
-    }
-
     pub fn end_frame(&mut self) -> anyhow::Result<()> {
         self.renderer.flush()?;
         Ok(())
