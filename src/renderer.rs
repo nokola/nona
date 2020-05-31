@@ -23,9 +23,9 @@ pub trait Renderer {
         height: usize,
         flags: ImageFlags,
         data: Option<&[u8]>,
-    ) -> NonaResult<ImageId>;
+    ) -> Result<ImageId, NonaError>;
 
-    fn delete_texture(&mut self, img: ImageId) -> NonaResult<()>;
+    fn delete_texture(&mut self, img: ImageId) -> Result<(), NonaError>;
 
     fn update_texture(
         &mut self,
@@ -35,13 +35,13 @@ pub trait Renderer {
         width: usize,
         height: usize,
         data: &[u8],
-    ) -> NonaResult<()>;
+    ) -> Result<(), NonaError>;
 
-    fn texture_size(&self, img: ImageId) -> NonaResult<(usize, usize)>;
+    fn texture_size(&self, img: ImageId) -> Result<(usize, usize), NonaError>;
 
-    fn viewport(&mut self, extent: Extent, device_pixel_ratio: f32) -> NonaResult<()>;
+    fn viewport(&mut self, extent: Extent, device_pixel_ratio: f32) -> Result<(), NonaError>;
 
-    fn flush(&mut self) -> NonaResult<()>;
+    fn flush(&mut self) -> Result<(), NonaError>;
 
     fn fill(
         &mut self,
@@ -51,7 +51,7 @@ pub trait Renderer {
         fringe: f32,
         bounds: Bounds,
         paths: &[Path],
-    ) -> NonaResult<()>;
+    ) -> Result<(), NonaError>;
 
     fn stroke(
         &mut self,
@@ -61,7 +61,7 @@ pub trait Renderer {
         fringe: f32,
         stroke_width: f32,
         paths: &[Path],
-    ) -> NonaResult<()>;
+    ) -> Result<(), NonaError>;
 
     fn triangles(
         &mut self,
@@ -69,5 +69,5 @@ pub trait Renderer {
         composite_operation: CompositeOperationState,
         scissor: &Scissor,
         vertexes: &[Vertex],
-    ) -> NonaResult<()>;
+    ) -> Result<(), NonaError>;
 }

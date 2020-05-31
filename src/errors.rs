@@ -4,6 +4,7 @@ use thiserror::Error;
 pub enum NonaError {
     #[error("ERR_TEXTURE: {0}")]
     Texture(String),
-}
 
-pub type NonaResult<T> = Result<T, NonaError>;
+    #[error("ERR_SHADER: {0}")]
+    Shader(String),
+}
