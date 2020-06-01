@@ -1,7 +1,7 @@
 use crate::cache::PathCache;
 use crate::fonts::{FontId, Fonts, LayoutChar};
 use crate::renderer::{Renderer, Scissor, TextureType};
-use crate::{Color, Extent, Point, Rect, Transform};
+use crate::{Color, Extent, NonaError, Point, Rect, Transform};
 use clamped::Clamp;
 use std::f32::consts::PI;
 
@@ -463,7 +463,7 @@ pub struct Context<R: Renderer> {
 }
 
 impl<R: Renderer> Context<R> {
-    pub fn create(mut renderer: R) -> anyhow::Result<Context<R>> {
+    pub fn create(mut renderer: R) -> Result<Context<R>, NonaError> {
         let fonts = Fonts::new(&mut renderer)?;
         Ok(Context {
             renderer,
@@ -495,7 +495,7 @@ impl<R: Renderer> Context<R> {
         &mut self,
         window_extent: E,
         device_pixel_ratio: f32,
-    ) -> anyhow::Result<()> {
+    ) -> Result<(), NonaError> {
         self.states.clear();
         self.states.push(Default::default());
         self.set_device_pixel_ratio(device_pixel_ratio);
@@ -508,7 +508,7 @@ impl<R: Renderer> Context<R> {
         Ok(())
     }
 
-    pub fn end_frame(&mut self) -> anyhow::Result<()> {
+    pub fn end_frame(&mut self) -> Result<(), NonaError> {
         self.renderer.flush()?;
         Ok(())
     }
@@ -612,8 +612,9 @@ impl<R: Renderer> Context<R> {
         &mut self,
         flags: ImageFlags,
         data: D,
-    ) -> anyhow::Result<ImageId> {
-        let img = image::load_from_memory(data.as_ref())?;
+    ) -> Result<ImageId, NonaError> {
+        let img = image::load_from_memory(data.as_ref())
+            .map_err(|err| NonaError::Texture(err.to_string()))?;
         let img = img.to_rgba();
         let dimensions = img.dimensions();
         let img = self.renderer.create_texture(
@@ -630,22 +631,26 @@ impl<R: Renderer> Context<R> {
         &mut self,
         flags: ImageFlags,
         path: P,
-    ) -> anyhow::Result<ImageId> {
-        self.create_image(flags, std::fs::read(path)?)
+    ) -> Result<ImageId, NonaError> {
+        self.create_image(
+            flags,
+            std::fs::read(path)
+                .map_err(|err| NonaError::Texture(format!("Error loading image: {}", err)))?,
+        )
     }
 
-    pub fn update_image(&mut self, img: ImageId, data: &[u8]) -> anyhow::Result<()> {
+    pub fn update_image(&mut self, img: ImageId, data: &[u8]) -> Result<(), NonaError> {
         let (w, h) = self.renderer.texture_size(img.clone())?;
         self.renderer.update_texture(img, 0, 0, w, h, data)?;
         Ok(())
     }
 
-    pub fn image_size(&self, img: ImageId) -> anyhow::Result<(usize, usize)> {
+    pub fn image_size(&self, img: ImageId) -> Result<(usize, usize), NonaError> {
         let res = self.renderer.texture_size(img)?;
         Ok(res)
     }
 
-    pub fn delete_image(&mut self, img: ImageId) -> anyhow::Result<()> {
+    pub fn delete_image(&mut self, img: ImageId) -> Result<(), NonaError> {
         self.renderer.delete_texture(img)?;
         Ok(())
     }
@@ -1019,7 +1024,7 @@ impl<R: Renderer> Context<R> {
         self.ellipse(center.into(), radius, radius);
     }
 
-    pub fn fill(&mut self) -> anyhow::Result<()> {
+    pub fn fill(&mut self) -> Result<(), NonaError> {
         let state = self.states.last_mut().unwrap();
         let mut fill_paint = state.fill.clone();
 
@@ -1058,7 +1063,7 @@ impl<R: Renderer> Context<R> {
         Ok(())
     }
 
-    pub fn stroke(&mut self) -> anyhow::Result<()> {
+    pub fn stroke(&mut self) -> Result<(), NonaError> {
         let state = self.states.last_mut().unwrap();
         let scale = state.xform.average_scale();
         let mut stroke_width = (state.stroke_width * scale).clamped(0.0, 200.0);
@@ -1118,15 +1123,19 @@ impl<R: Renderer> Context<R> {
         &mut self,
         name: N,
         path: P,
-    ) -> anyhow::Result<FontId> {
-        self.create_font(name, std::fs::read(path)?)
+    ) -> Result<FontId, NonaError> {
+        self.create_font(
+            name,
+            std::fs::read(path)
+                .map_err(|err| NonaError::Texture(format!("Error loading image: {}", err)))?,
+        )
     }
 
     pub fn create_font<N: Into<String>, D: Into<Vec<u8>>>(
         &mut self,
         name: N,
         data: D,
-    ) -> anyhow::Result<FontId> {
+    ) -> Result<FontId, NonaError> {
         self.fonts.add_font(name, data)
     }
 
@@ -1170,7 +1179,7 @@ impl<R: Renderer> Context<R> {
         }
     }
 
-    pub fn text<S: AsRef<str>, P: Into<Point>>(&mut self, pt: P, text: S) -> anyhow::Result<()> {
+    pub fn text<S: AsRef<str>, P: Into<Point>>(&mut self, pt: P, text: S) -> Result<(), NonaError> {
         let state = self.states.last().unwrap();
         let scale = state.xform.font_scale() * self.device_pixel_ratio;
         let invscale = 1.0 / scale;

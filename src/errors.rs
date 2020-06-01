@@ -7,4 +7,7 @@ pub enum NonaError {
 
     #[error("ERR_SHADER: {0}")]
     Shader(String),
+
+    #[error("ERR_FONT: {0}")]
+    Font(String),
 }

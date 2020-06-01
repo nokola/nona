@@ -1,6 +1,6 @@
 use crate::context::{ImageId, TextMetrics};
 use crate::renderer::TextureType;
-use crate::{Align, Bounds, Extent, ImageFlags, Renderer};
+use crate::{Align, Bounds, Extent, ImageFlags, NonaError, Renderer};
 use bitflags::_core::borrow::Borrow;
 use rusttype::gpu_cache::Cache;
 use rusttype::{Font, Glyph, Point, PositionedGlyph, Scale};
@@ -53,7 +53,7 @@ impl Error for FontError {
 }
 
 impl Fonts {
-    pub fn new<R: Renderer>(renderer: &mut R) -> anyhow::Result<Fonts> {
+    pub fn new<R: Renderer>(renderer: &mut R) -> Result<Fonts, NonaError> {
         Ok(Fonts {
             fonts: Default::default(),
             fonts_by_name: Default::default(),
@@ -75,10 +75,8 @@ impl Fonts {
         &mut self,
         name: N,
         data: D,
-    ) -> anyhow::Result<FontId> {
-        let font = Font::try_from_vec(data.into()).ok_or(anyhow::Error::new(FontError {
-            message: String::from("Error creating font"),
-        }))?;
+    ) -> Result<FontId, NonaError> {
+        let font = Font::try_from_vec(data.into()).ok_or(NonaError::Font(String::from("Incorrect font data format")))?;
         let fd = FontData {
             font,
             fallback_fonts: Default::default(),
@@ -119,20 +117,22 @@ impl Fonts {
         }
     }
 
-    fn render_texture<R: Renderer>(&mut self, renderer: &mut R) -> anyhow::Result<()> {
+    fn render_texture<R: Renderer>(&mut self, renderer: &mut R) -> Result<(), NonaError> {
         let img = self.img.clone();
-        self.cache.cache_queued(move |rect, data| {
-            renderer
-                .update_texture(
-                    img.clone(),
-                    rect.min.x as usize,
-                    rect.min.y as usize,
-                    (rect.max.x - rect.min.x) as usize,
-                    (rect.max.y - rect.min.y) as usize,
-                    data,
-                )
-                .unwrap();
-        })?;
+        self.cache
+            .cache_queued(move |rect, data| {
+                renderer
+                    .update_texture(
+                        img.clone(),
+                        rect.min.x as usize,
+                        rect.min.y as usize,
+                        (rect.max.x - rect.min.x) as usize,
+                        (rect.max.y - rect.min.y) as usize,
+                        data,
+                    )
+                    .unwrap();
+            })
+            .map_err(|err| NonaError::Texture(err.to_string()))?;
         Ok(())
     }
 
@@ -201,7 +201,7 @@ impl Fonts {
         spacing: f32,
         cache: bool,
         result: &mut Vec<LayoutChar>,
-    ) -> anyhow::Result<()> {
+    ) -> Result<(), NonaError> {
         result.clear();
 
         if let Some(fd) = self.fonts.get(id) {
