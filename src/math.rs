@@ -1,4 +1,3 @@
-use num_traits::AsPrimitive;
 use std::ops::{Mul, MulAssign};
 
 #[derive(Debug, Copy, Clone, Default)]
@@ -57,9 +56,15 @@ impl Point {
     }
 }
 
-impl<T: AsPrimitive<f32>> From<(T, T)> for Point {
-    fn from((x, y): (T, T)) -> Self {
-        Point::new(x.as_(), y.as_())
+impl From<(f32, f32)> for Point {
+    fn from((x, y): (f32, f32)) -> Self {
+        Point::new(x, y)
+    }
+}
+
+impl From<(i32, i32)> for Point {
+    fn from((x, y): (i32, i32)) -> Self {
+        Point::new(x as f32, y as f32)
     }
 }
 
@@ -75,9 +80,9 @@ impl Extent {
     }
 }
 
-impl<T: AsPrimitive<f32>> From<(T, T)> for Extent {
-    fn from((width, height): (T, T)) -> Self {
-        Extent::new(width.as_(), height.as_())
+impl From<(f32, f32)> for Extent {
+    fn from((width, height): (f32, f32)) -> Self {
+        Extent::new(width, height)
     }
 }
 
@@ -127,9 +132,9 @@ impl Rect {
     }
 }
 
-impl<T: AsPrimitive<f32>> From<(T, T, T, T)> for Rect {
-    fn from((x, y, w, h): (T, T, T, T)) -> Self {
-        Rect::new((x.as_(), y.as_()).into(), (w.as_(), h.as_()).into())
+impl From<(f32, f32, f32, f32)> for Rect {
+    fn from((x, y, w, h): (f32, f32, f32, f32)) -> Self {
+        Rect::new((x, y).into(), (w, h).into())
     }
 }
 
@@ -263,17 +268,17 @@ impl MulAssign for Transform {
     }
 }
 
-impl<T: AsPrimitive<f32>> From<(T, T, T, T, T, T)> for Transform {
-    fn from((a1, a2, a3, a4, a5, a6): (T, T, T, T, T, T)) -> Self {
-        Transform([a1.as_(), a2.as_(), a3.as_(), a4.as_(), a5.as_(), a6.as_()])
+impl From<(f32, f32, f32, f32, f32, f32)> for Transform {
+    fn from((a1, a2, a3, a4, a5, a6): (f32, f32, f32, f32, f32, f32)) -> Self {
+        Transform([a1, a2, a3, a4, a5, a6])
     }
 }
 
-impl<T: AsPrimitive<f32>> From<[T; 6]> for Transform {
-    fn from(values: [T; 6]) -> Self {
+impl From<[f32; 6]> for Transform {
+    fn from(values: [f32; 6]) -> Self {
         let mut values2 = [0.0; 6];
         for i in 0..6 {
-            values2[i] = values[i].as_();
+            values2[i] = values[i];
         }
         Transform(values2)
     }

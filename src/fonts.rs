@@ -265,8 +265,8 @@ impl Fonts {
                             glyph: glyph.clone(),
                             uv: Default::default(),
                             bounds: Bounds {
-                                min: (bb.min.x, bb.min.y).into(),
-                                max: (bb.max.x, bb.max.y).into(),
+                                min: (bb.min.x as f32, bb.min.y as f32).into(),
+                                max: (bb.max.x as f32, bb.max.y as f32).into(),
                             },
                         });
                     }

@@ -1,5 +1,4 @@
 use clamped::Clamp;
-use num_traits::AsPrimitive;
 use std::ops::Rem;
 
 #[derive(Debug, Copy, Clone, Default)]
@@ -69,15 +68,15 @@ impl Color {
     }
 }
 
-impl<T: AsPrimitive<f32>> From<(T, T, T)> for Color {
-    fn from((r, g, b): (T, T, T)) -> Self {
-        Color::rgb(r.as_(), g.as_(), b.as_())
+impl From<(f32, f32, f32)> for Color {
+    fn from((r, g, b): (f32, f32, f32)) -> Self {
+        Color::rgb(r, g, b)
     }
 }
 
-impl<T: AsPrimitive<f32>> From<(T, T, T, T)> for Color {
-    fn from((r, g, b, a): (T, T, T, T)) -> Self {
-        Color::rgba(r.as_(), g.as_(), b.as_(), a.as_())
+impl From<(f32, f32, f32, f32)> for Color {
+    fn from((r, g, b, a): (f32, f32, f32, f32)) -> Self {
+        Color::rgba(r, g, b, a)
     }
 }
 
