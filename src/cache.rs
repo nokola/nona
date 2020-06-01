@@ -1,7 +1,7 @@
 use crate::context::{Command, Path, Vertex};
 use crate::{Bounds, LineCap, LineJoin, Point, Solidity};
 use clamped::Clamp;
-use rawpointer::ptrdistance;
+use core::mem::size_of;
 use std::f32::consts::PI;
 
 bitflags! {
@@ -29,6 +29,19 @@ pub(crate) struct PathCache {
     pub(crate) paths: Vec<Path>,
     pub(crate) vertexes: Vec<Vertex>,
     pub(crate) bounds: Bounds,
+}
+
+/// Copied from `rawpointer` rust crate https://docs.rs/rawpointer/0.1.0/i686-apple-darwin/src/rawpointer/lib.rs.html#15-22
+/// Return the number of elements of `T` from `start` to `end`.<br>
+/// Return the arithmetic difference if `T` is zero size.
+#[inline(always)]
+pub fn ptrdistance<T>(start: *const T, end: *const T) -> usize {
+    let size = size_of::<T>();
+    if size == 0 {
+        (end as usize).wrapping_sub(start as usize)
+    } else {
+        (end as usize - start as usize) / size
+    }
 }
 
 impl PathCache {
