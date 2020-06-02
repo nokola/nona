@@ -23,7 +23,7 @@ pub(crate) struct VPoint {
     flags: PointFlags,
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub(crate) struct PathCache {
     pub(crate) points: Vec<VPoint>,
     pub(crate) paths: Vec<Path>,

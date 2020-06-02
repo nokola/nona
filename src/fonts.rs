@@ -5,7 +5,11 @@ use bitflags::_core::borrow::Borrow;
 use rusttype::gpu_cache::Cache;
 use rusttype::{Font, Glyph, Point, PositionedGlyph, Scale};
 use slab::Slab;
-use std::{collections::HashMap, error::Error, fmt::Display};
+use std::{
+    collections::HashMap,
+    error::Error,
+    fmt::{Debug, Display},
+};
 
 const TEX_WIDTH: usize = 1024;
 const TEX_HEIGHT: usize = 1024;
@@ -24,6 +28,7 @@ pub struct LayoutChar {
     pub bounds: Bounds,
 }
 
+#[derive(Debug)]
 struct FontData {
     font: Font<'static>,
     fallback_fonts: Vec<FontId>,
@@ -34,6 +39,12 @@ pub struct Fonts {
     fonts_by_name: HashMap<String, FontId>,
     cache: Cache<'static>,
     pub(crate) img: ImageId,
+}
+
+impl Debug for Fonts {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Fonts")
+    }
 }
 
 #[derive(Debug)]
@@ -76,7 +87,8 @@ impl Fonts {
         name: N,
         data: D,
     ) -> Result<FontId, NonaError> {
-        let font = Font::try_from_vec(data.into()).ok_or(NonaError::Font(String::from("Incorrect font data format")))?;
+        let font = Font::try_from_vec(data.into())
+            .ok_or(NonaError::Font(String::from("Incorrect font data format")))?;
         let fd = FontData {
             font,
             fallback_fonts: Default::default(),

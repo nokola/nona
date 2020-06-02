@@ -445,7 +445,7 @@ pub(crate) enum Command {
 }
 
 pub struct Context<R: Renderer> {
-    renderer: R,
+    renderer: Option<R>,
     commands: Vec<Command>,
     last_position: Point,
     states: Vec<State>,
@@ -462,11 +462,11 @@ pub struct Context<R: Renderer> {
     text_triangles_count: usize,
 }
 
-impl<R: Renderer> Context<R> {
-    pub fn create(mut renderer: R) -> Result<Context<R>, NonaError> {
-        let fonts = Fonts::new(&mut renderer)?;
+impl<'a, R: Renderer> Context<R> {
+    pub fn create(renderer: &mut R) -> Result<Context<R>, NonaError> {
+        let fonts = Fonts::new(renderer)?;
         Ok(Context {
-            renderer,
+            renderer: None,
             commands: Default::default(),
             last_position: Default::default(),
             states: vec![Default::default()],
@@ -491,26 +491,26 @@ impl<R: Renderer> Context<R> {
         self.device_pixel_ratio = ratio;
     }
 
-    pub fn begin_frame<E: Into<Extent>>(
-        &mut self,
-        window_extent: E,
-        device_pixel_ratio: f32,
-    ) -> Result<(), NonaError> {
+    pub fn attach_renderer(&mut self, mut renderer: R) -> Result<(), NonaError> {
         self.states.clear();
         self.states.push(Default::default());
-        self.set_device_pixel_ratio(device_pixel_ratio);
-        self.renderer
-            .viewport(window_extent.into(), device_pixel_ratio)?;
+        self.set_device_pixel_ratio(renderer.device_pixel_ratio());
+        renderer.viewport(renderer.view_size().into(), renderer.device_pixel_ratio())?;
         self.draw_call_count = 0;
         self.fill_triangles_count = 0;
         self.stroke_triangles_count = 0;
         self.text_triangles_count = 0;
+        self.renderer = Some(renderer);
         Ok(())
     }
 
-    pub fn end_frame(&mut self) -> Result<(), NonaError> {
-        self.renderer.flush()?;
-        Ok(())
+    pub fn detach_renderer(&mut self) -> Result<R, NonaError> {
+        let renderer = self
+            .renderer
+            .as_mut()
+            .unwrap_or_else(|| panic!("Call attach_renderer to attach renderer first!"));
+        renderer.flush()?;
+        Ok(self.renderer.take().unwrap())
     }
 
     pub fn save(&mut self) {
@@ -613,11 +613,15 @@ impl<R: Renderer> Context<R> {
         flags: ImageFlags,
         data: D,
     ) -> Result<ImageId, NonaError> {
+        let renderer = self
+            .renderer
+            .as_mut()
+            .unwrap_or_else(|| panic!("Call attach_renderer to attach renderer first!"));
         let img = image::load_from_memory(data.as_ref())
             .map_err(|err| NonaError::Texture(err.to_string()))?;
         let img = img.to_rgba();
         let dimensions = img.dimensions();
-        let img = self.renderer.create_texture(
+        let img = renderer.create_texture(
             TextureType::RGBA,
             dimensions.0 as usize,
             dimensions.1 as usize,
@@ -640,18 +644,30 @@ impl<R: Renderer> Context<R> {
     }
 
     pub fn update_image(&mut self, img: ImageId, data: &[u8]) -> Result<(), NonaError> {
-        let (w, h) = self.renderer.texture_size(img.clone())?;
-        self.renderer.update_texture(img, 0, 0, w, h, data)?;
+        let renderer = self
+            .renderer
+            .as_mut()
+            .unwrap_or_else(|| panic!("Call attach_renderer to attach renderer first!"));
+        let (w, h) = renderer.texture_size(img.clone())?;
+        renderer.update_texture(img, 0, 0, w, h, data)?;
         Ok(())
     }
 
     pub fn image_size(&self, img: ImageId) -> Result<(usize, usize), NonaError> {
-        let res = self.renderer.texture_size(img)?;
+        let renderer = self
+            .renderer
+            .as_ref()
+            .unwrap_or_else(|| panic!("Call attach_renderer to attach renderer first!"));
+        let res = renderer.texture_size(img)?;
         Ok(res)
     }
 
     pub fn delete_image(&mut self, img: ImageId) -> Result<(), NonaError> {
-        self.renderer.delete_texture(img)?;
+        let renderer = self
+            .renderer
+            .as_mut()
+            .unwrap_or_else(|| panic!("Call attach_renderer to attach renderer first!"));
+        renderer.delete_texture(img)?;
         Ok(())
     }
 
@@ -1025,12 +1041,16 @@ impl<R: Renderer> Context<R> {
     }
 
     pub fn fill(&mut self) -> Result<(), NonaError> {
+        let renderer = self
+            .renderer
+            .as_mut()
+            .unwrap_or_else(|| panic!("Call attach_renderer to attach renderer first!"));
         let state = self.states.last_mut().unwrap();
         let mut fill_paint = state.fill.clone();
 
         self.cache
             .flatten_paths(&self.commands, self.dist_tol, self.tess_tol);
-        if self.renderer.edge_antialias() && state.shape_antialias {
+        if renderer.edge_antialias() && state.shape_antialias {
             self.cache
                 .expand_fill(self.fringe_width, LineJoin::Miter, 2.4, self.fringe_width);
         } else {
@@ -1041,7 +1061,7 @@ impl<R: Renderer> Context<R> {
         fill_paint.inner_color.a *= state.alpha;
         fill_paint.outer_color.a *= state.alpha;
 
-        self.renderer.fill(
+        renderer.fill(
             &fill_paint,
             state.composite_operation,
             &state.scissor,
@@ -1064,6 +1084,10 @@ impl<R: Renderer> Context<R> {
     }
 
     pub fn stroke(&mut self) -> Result<(), NonaError> {
+        let renderer = self
+            .renderer
+            .as_mut()
+            .unwrap_or_else(|| panic!("Call attach_renderer to attach renderer first!"));
         let state = self.states.last_mut().unwrap();
         let scale = state.xform.average_scale();
         let mut stroke_width = (state.stroke_width * scale).clamped(0.0, 200.0);
@@ -1082,7 +1106,7 @@ impl<R: Renderer> Context<R> {
         self.cache
             .flatten_paths(&self.commands, self.dist_tol, self.tess_tol);
 
-        if self.renderer.edge_antialias() && state.shape_antialias {
+        if renderer.edge_antialias() && state.shape_antialias {
             self.cache.expand_stroke(
                 stroke_width * 0.5,
                 self.fringe_width,
@@ -1102,7 +1126,7 @@ impl<R: Renderer> Context<R> {
             );
         }
 
-        self.renderer.stroke(
+        renderer.stroke(
             &stroke_paint,
             state.composite_operation,
             &state.scissor,
@@ -1180,13 +1204,17 @@ impl<R: Renderer> Context<R> {
     }
 
     pub fn text<S: AsRef<str>, P: Into<Point>>(&mut self, pt: P, text: S) -> Result<(), NonaError> {
+        let renderer = self
+            .renderer
+            .as_mut()
+            .unwrap_or_else(|| panic!("Call attach_renderer to attach renderer first!"));
         let state = self.states.last().unwrap();
         let scale = state.xform.font_scale() * self.device_pixel_ratio;
         let invscale = 1.0 / scale;
         let pt = pt.into();
 
         self.fonts.layout_text(
-            &mut self.renderer,
+            renderer,
             text.as_ref(),
             state.font_id,
             (pt.x * scale, pt.y * scale).into(),
@@ -1231,7 +1259,7 @@ impl<R: Renderer> Context<R> {
         paint.inner_color.a *= state.alpha;
         paint.outer_color.a *= state.alpha;
 
-        self.renderer.triangles(
+        renderer.triangles(
             &paint,
             state.composite_operation,
             &state.scissor,
