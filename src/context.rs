@@ -491,26 +491,42 @@ impl<'a, R: Renderer> Context<R> {
         self.device_pixel_ratio = ratio;
     }
 
-    pub fn attach_renderer(&mut self, mut renderer: R) -> Result<(), NonaError> {
+    pub fn attach_renderer(&mut self, renderer: Option<R>) {
+        self.renderer = renderer;
+    }
+
+    pub fn begin_frame(&mut self) -> Result<(), NonaError> {
+        let device_pixel_ratio = {
+            let renderer = self
+                .renderer
+                .as_mut()
+                .expect("Call attach_renderer to attach renderer first!");
+            renderer.viewport(renderer.view_size().into(), renderer.device_pixel_ratio())?;
+            renderer.device_pixel_ratio()
+        };
+        self.set_device_pixel_ratio(device_pixel_ratio);
         self.states.clear();
         self.states.push(Default::default());
-        self.set_device_pixel_ratio(renderer.device_pixel_ratio());
-        renderer.viewport(renderer.view_size().into(), renderer.device_pixel_ratio())?;
         self.draw_call_count = 0;
         self.fill_triangles_count = 0;
         self.stroke_triangles_count = 0;
         self.text_triangles_count = 0;
-        self.renderer = Some(renderer);
         Ok(())
     }
 
-    pub fn detach_renderer(&mut self) -> Result<R, NonaError> {
+    pub fn end_frame(&mut self) -> Result<(), NonaError> {
         let renderer = self
             .renderer
             .as_mut()
             .expect("Call attach_renderer to attach renderer first!");
-        renderer.flush()?;
-        Ok(self.renderer.take().unwrap())
+        renderer.flush()
+    }
+
+    pub fn detach_renderer(&mut self) -> Result<Option<R>, NonaError> {
+        self.renderer
+            .as_mut()
+            .expect("Call attach_renderer to attach renderer first!");
+        Ok(self.renderer.take())
     }
 
     pub fn save(&mut self) {
