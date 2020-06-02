@@ -522,11 +522,11 @@ impl<'a, R: Renderer> Context<R> {
         renderer.flush()
     }
 
-    pub fn detach_renderer(&mut self) -> Result<Option<R>, NonaError> {
+    pub fn detach_renderer(&mut self) -> Option<R> {
         self.renderer
             .as_mut()
             .expect("Call attach_renderer to attach renderer first!");
-        Ok(self.renderer.take())
+        self.renderer.take()
     }
 
     pub fn save(&mut self) {
