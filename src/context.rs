@@ -508,7 +508,7 @@ impl<'a, R: Renderer> Context<R> {
         let renderer = self
             .renderer
             .as_mut()
-            .unwrap_or_else(|| panic!("Call attach_renderer to attach renderer first!"));
+            .expect("Call attach_renderer to attach renderer first!");
         renderer.flush()?;
         Ok(self.renderer.take().unwrap())
     }
@@ -616,7 +616,7 @@ impl<'a, R: Renderer> Context<R> {
         let renderer = self
             .renderer
             .as_mut()
-            .unwrap_or_else(|| panic!("Call attach_renderer to attach renderer first!"));
+            .expect("Call attach_renderer to attach renderer first!");
         let img = image::load_from_memory(data.as_ref())
             .map_err(|err| NonaError::Texture(err.to_string()))?;
         let img = img.to_rgba();
@@ -647,7 +647,7 @@ impl<'a, R: Renderer> Context<R> {
         let renderer = self
             .renderer
             .as_mut()
-            .unwrap_or_else(|| panic!("Call attach_renderer to attach renderer first!"));
+            .expect("Call attach_renderer to attach renderer first!");
         let (w, h) = renderer.texture_size(img.clone())?;
         renderer.update_texture(img, 0, 0, w, h, data)?;
         Ok(())
@@ -657,7 +657,7 @@ impl<'a, R: Renderer> Context<R> {
         let renderer = self
             .renderer
             .as_ref()
-            .unwrap_or_else(|| panic!("Call attach_renderer to attach renderer first!"));
+            .expect("Call attach_renderer to attach renderer first!");
         let res = renderer.texture_size(img)?;
         Ok(res)
     }
@@ -666,7 +666,7 @@ impl<'a, R: Renderer> Context<R> {
         let renderer = self
             .renderer
             .as_mut()
-            .unwrap_or_else(|| panic!("Call attach_renderer to attach renderer first!"));
+            .expect("Call attach_renderer to attach renderer first!");
         renderer.delete_texture(img)?;
         Ok(())
     }
@@ -1044,7 +1044,7 @@ impl<'a, R: Renderer> Context<R> {
         let renderer = self
             .renderer
             .as_mut()
-            .unwrap_or_else(|| panic!("Call attach_renderer to attach renderer first!"));
+            .expect("Call attach_renderer to attach renderer first!");
         let state = self.states.last_mut().unwrap();
         let mut fill_paint = state.fill.clone();
 
@@ -1087,7 +1087,7 @@ impl<'a, R: Renderer> Context<R> {
         let renderer = self
             .renderer
             .as_mut()
-            .unwrap_or_else(|| panic!("Call attach_renderer to attach renderer first!"));
+            .expect("Call attach_renderer to attach renderer first!");
         let state = self.states.last_mut().unwrap();
         let scale = state.xform.average_scale();
         let mut stroke_width = (state.stroke_width * scale).clamped(0.0, 200.0);
@@ -1207,7 +1207,7 @@ impl<'a, R: Renderer> Context<R> {
         let renderer = self
             .renderer
             .as_mut()
-            .unwrap_or_else(|| panic!("Call attach_renderer to attach renderer first!"));
+            .expect("Call attach_renderer to attach renderer first!");
         let state = self.states.last().unwrap();
         let scale = state.xform.font_scale() * self.device_pixel_ratio;
         let invscale = 1.0 / scale;
