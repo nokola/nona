@@ -495,13 +495,16 @@ impl<'a, R: Renderer> Context<R> {
         self.renderer = renderer;
     }
 
-    pub fn begin_frame(&mut self) -> Result<(), NonaError> {
+    pub fn begin_frame(&mut self, clear_color: Option<Color>) -> Result<(), NonaError> {
         let device_pixel_ratio = {
             let renderer = self
                 .renderer
                 .as_mut()
                 .expect("Call attach_renderer to attach renderer first!");
             renderer.viewport(renderer.view_size().into(), renderer.device_pixel_ratio())?;
+            if let Some(color) = clear_color  {
+                renderer.clear_screen(color)
+            }
             renderer.device_pixel_ratio()
         };
         self.set_device_pixel_ratio(device_pixel_ratio);

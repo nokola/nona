@@ -45,6 +45,8 @@ pub trait Renderer {
 
     fn viewport(&mut self, extent: Extent, device_pixel_ratio: f32) -> Result<(), NonaError>;
 
+    fn clear_screen(&mut self, color: Color);
+
     fn flush(&mut self) -> Result<(), NonaError>;
 
     fn fill(
