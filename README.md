@@ -1,4 +1,7 @@
 # nona
+**ANNOUNCEMENT: nona sources are now part of [nonaquad](https://github.com/nokola/nonaquad)**
+
+---
 Antialiased vector drawing bring-your-own-renderer (or use ours) library
 
 For a renderer, look at https://github.com/nokola/nonaquad
